@@ -1,6 +1,6 @@
 #!/usr/bin/env python3.9
 
-from jaccard import ShingleGenerator
+from jaccard import ShingleSetGenerator
 
 from collections.abc import Generator, Iterable
 from csv import reader
@@ -27,6 +27,12 @@ def read_csv(filename: str) -> Generator[dict[str, str], None, None]:
 
 def read_data(data: Iterable[dict[str, str]]) -> Generator[list[str], None, None]:
     """
+    Extracts the required data from the data rows read from the CSV file.
+
+    :param data: An iterable of dictionary objects. These dictionaries should
+    contain the keys `"News_ID"` and `"article"`. Other keys will be ignored.
+
+    :return: A `Generator` object that yields the data as lists of strings.
     """
     for entry in data:
         text = entry["article"]
@@ -38,6 +44,7 @@ if __name__ == "__main__":
     filename = "data/news_articles_small.csv"
     csv_reader = read_csv(filename)
 
-    shingle_gen = ShingleGenerator(read_data(csv_reader), 2)
-    for shingles in shingle_gen:
-        print(shingles)
+    shingle_gen = ShingleSetGenerator(read_data(csv_reader), 2)
+    for shingle_set in shingle_gen:
+        print("[", " ".join(str(v) for v in list(shingle_set)[:20]), "..." if len(shingle_set) > 20 else "", "]")
+    print(len(shingle_gen.shingles))
