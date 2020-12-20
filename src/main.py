@@ -1,6 +1,6 @@
 #!/usr/bin/env python3.9
 
-from jaccard import ShingleSetGenerator
+from jaccard import ShingleSetGenerator, jaccard
 
 from collections.abc import Generator, Iterable
 from csv import reader
@@ -45,6 +45,21 @@ if __name__ == "__main__":
     csv_reader = read_csv(filename)
 
     shingle_gen = ShingleSetGenerator(read_data(csv_reader), 2)
-    for shingle_set in shingle_gen:
-        print("[", " ".join(str(v) for v in list(shingle_set)[:20]), "..." if len(shingle_set) > 20 else "", "]")
-    print(len(shingle_gen.shingles))
+    shingle_sets = list(shingle_gen)
+
+    result_matrix = []
+    for index, set_1 in enumerate(shingle_sets):
+        result_matrix.append([])
+
+        for set_2 in shingle_sets[:index]:
+            result_matrix[index].append(jaccard(set_1, set_2))
+
+    with open("output_2.csv", "w") as output:
+        size = len(result_matrix)
+        for row in range(size):
+            for col in range(row):
+                output.write(f"{result_matrix[row][col]},")
+            output.write("1.0")
+            for col in range(row + 1, size):
+                output.write(f",{result_matrix[col][row]}")
+            output.write("\n")
