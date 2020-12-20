@@ -1,7 +1,10 @@
 #!/usr/bin/env python3.9
 
+from jaccard import ShingleGenerator
+
+from collections.abc import Generator, Iterable
 from csv import reader
-from typing import Generator
+from re import split
 
 
 def read_csv(filename: str) -> Generator[dict[str, str], None, None]:
@@ -22,6 +25,19 @@ def read_csv(filename: str) -> Generator[dict[str, str], None, None]:
             yield dict(zip(header, row))
 
 
+def read_data(data: Iterable[dict[str, str]]) -> Generator[list[str], None, None]:
+    """
+    """
+    for entry in data:
+        text = entry["article"]
+        words = split(r"\W+", text)
+        yield [word.lower() for word in words]
+
+
 if __name__ == "__main__":
-    for row in read_csv("data/news_articles_small.csv"):
-        print(f"{row['News_ID']:>5} {row['article'][:100]}")
+    filename = "data/news_articles_small.csv"
+    csv_reader = read_csv(filename)
+
+    shingle_gen = ShingleGenerator(read_data(csv_reader), 2)
+    for shingles in shingle_gen:
+        print(shingles)
