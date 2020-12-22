@@ -15,6 +15,8 @@ def get_ngrams(text: Iterable[str], n: int) -> Generator[tuple[str, ...], None, 
 
     :return: A generator object generating all of the n-grams in the text.
     """
+
+    # I think this has to just be (word) without , ?
     if n == 1:
         yield from ((word,) for word in text)
         return None
