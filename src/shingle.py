@@ -82,6 +82,52 @@ class ShingleSetGenerator(Iterable):
             yield shingles
 
 
+def convert_int_shingles_to_bytes(shingle: tuple[int, ...]) -> bytes:
+    """
+    Converts a shingle to a byte string.
+
+    :param shingle: The shingle as a tuple of integers.
+
+    :return: A byte string that represents the shingle. Each integer is added to
+    the byte string as a 64 bit big-endian integer.
+    """
+    shingle_bytes = bytearray(8 * len(shingle))
+    for index, value in enumerate(shingle):
+        shingle_bytes[8 * index: 8 * index + 8] = value.to_bytes(8, "big")
+    return bytes(shingle_bytes)
+
+
+def convert_str_shingles_to_bytes(shingle: tuple[str, ...]) -> bytes:
+    """
+    Converts a shingle to a byte string.
+
+    :param shingle: The shingle as a tuple of strings.
+
+    :return: A byte string that represents the shingle. Each string is added to
+    the byte string, with the null character \x00 as separator.
+    """
+    return "\x00".join(shingle).encode()
+
+
+def convert_bytes_shingle_to_bytes(shingle: tuple[bytes, ...]) -> bytes:
+    """
+    Converts a shingle to a byte string.
+
+    :param shingle: The shingle as a tuple of byte strings.
+
+    :return: A byte string that represents the shingle. Each byte string is
+    added to the byte string, with the null character \x00 as separator.
+    """
+    size = sum(len(token) for token in shingle) + len(shingle) - 1
+    shingle_bytes = bytearray(size)
+
+    location = 0
+    for token in shingle:
+        shingle_bytes[location : location + len(token)] = token
+        location += len(token) + 1
+    return bytes(shingle_bytes)
+
+
 def convert_to_bytes(shingle: tuple[Union[int, str, bytes], ...]) -> bytes:
     """
     Converts a shingle to a single `bytes` object.
@@ -95,32 +141,11 @@ def convert_to_bytes(shingle: tuple[Union[int, str, bytes], ...]) -> bytes:
     character. For `int` tokens, there is no separator, but the integers should
     fit in 64 bits (as signed integers).
     """
-    shingle_bytes: bytes = None
     shingle_type = type(shingle[0])
 
     if shingle_type is int:
-        # Assuming the integers fit in 64 bits == 8 bytes
-        temp_bytes = bytearray(8 * len(shingle))
-        for index, value in enumerate(shingle):
-            temp_bytes[8 * index : 8 * index + 8] = value.to_bytes(8, "big")
-        shingle_bytes = bytes(temp_bytes)
-
+        return convert_int_shingles_to_bytes(shingle)
     elif shingle_type is str:
-        # Use a separator (e.g. null) to make sure shingles like (A, BC)
-        # and (AB, C) don't produce the same value ABC for `shingle_bytes`
-        # With a separator they produce different values: "A BC" and "AB C",
-        # assuming that individual tokens don't contain the separator
-        shingle_bytes = "\x00".join(token for token in shingle).encode()
-
+        return convert_str_shingles_to_bytes(shingle)
     else:
-        # The total size of the shingle's tokens, and 1 byte separators
-        total_size = sum(len(token) for token in shingle) + len(shingle) - 1
-        temp_bytes = bytearray(total_size)
-
-        location = 0
-        for token in shingle:
-            temp_bytes[location : location + len(token)] = token
-            location += len(token) + 1
-        shingle_bytes = temp_bytes
-
-    return shingle_bytes
+        return convert_bytes_shingle_to_bytes(shingle)
