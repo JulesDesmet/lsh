@@ -1,6 +1,7 @@
 #!/usr/bin/env python3.9
 
 from collections.abc import Generator, Iterable
+from typing import Union
 
 
 def get_ngrams(text: Iterable[str], n: int) -> Generator[tuple[str, ...], None, None]:
@@ -79,3 +80,47 @@ class ShingleSetGenerator(Iterable):
                     shingles.add(self.inverse_shingles[ngram])
 
             yield shingles
+
+
+def convert_to_bytes(shingle: tuple[Union[int, str, bytes], ...]) -> bytes:
+    """
+    Converts a shingle to a single `bytes` object.
+
+    :param shingle: The shingle, which can be a tuple of integers, strings, or
+    bytes.
+
+    :return: A `bytes` object containing the tokens from the shingle. For
+    shingles consisting `str` and `bytes` tokens, the null character (`\x00`) is
+    used as a separator. This means that tokens shouldn't contain the null
+    character. For `int` tokens, there is no separator, but the integers should
+    fit in 64 bits (as signed integers).
+    """
+    shingle_bytes: bytes = None
+    shingle_type = type(shingle[0])
+
+    if shingle_type is int:
+        # Assuming the integers fit in 64 bits == 8 bytes
+        temp_bytes = bytearray(8 * len(shingle))
+        for index, value in enumerate(shingle):
+            temp_bytes[8 * index : 8 * index + 8] = value.to_bytes(8, "big")
+        shingle_bytes = bytes(temp_bytes)
+
+    elif shingle_type is str:
+        # Use a separator (e.g. null) to make sure shingles like (A, BC)
+        # and (AB, C) don't produce the same value ABC for `shingle_bytes`
+        # With a separator they produce different values: "A BC" and "AB C",
+        # assuming that individual tokens don't contain the separator
+        shingle_bytes = "\x00".join(token for token in shingle).encode()
+
+    else:
+        # The total size of the shingle's tokens, and 1 byte separators
+        total_size = sum(len(token) for token in shingle) + len(shingle) - 1
+        temp_bytes = bytearray(total_size)
+
+        location = 0
+        for token in shingle:
+            temp_bytes[location : location + len(token)] = token
+            location += len(token) + 1
+        shingle_bytes = temp_bytes
+
+    return shingle_bytes
