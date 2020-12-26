@@ -1,5 +1,6 @@
 #!/usr/bin/env python3.9
-from jaccard import ShingleSetGenerator, jaccard
+
+from shingle import ShingleSetGenerator
 
 from collections.abc import Generator, Iterable
 from csv import reader
