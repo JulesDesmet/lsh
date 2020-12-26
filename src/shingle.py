@@ -1,7 +1,7 @@
 #!/usr/bin/env python3.9
 
 from collections.abc import Generator, Iterable
-from typing import Union
+from typing import Union, TypeVar
 
 
 def get_ngrams(text: Iterable[str], n: int) -> Generator[tuple[str, ...], None, None]:
@@ -82,7 +82,7 @@ class ShingleSetGenerator(Iterable):
             yield shingles
 
 
-def convert_int_shingles_to_bytes(shingle: tuple[int, ...]) -> bytes:
+def convert_int_shingle_to_bytes(shingle: tuple[int, ...]) -> bytes:
     """
     Converts a shingle to a byte string.
 
@@ -93,11 +93,11 @@ def convert_int_shingles_to_bytes(shingle: tuple[int, ...]) -> bytes:
     """
     shingle_bytes = bytearray(8 * len(shingle))
     for index, value in enumerate(shingle):
-        shingle_bytes[8 * index: 8 * index + 8] = value.to_bytes(8, "big")
+        shingle_bytes[8 * index : 8 * index + 8] = value.to_bytes(8, "big")
     return bytes(shingle_bytes)
 
 
-def convert_str_shingles_to_bytes(shingle: tuple[str, ...]) -> bytes:
+def convert_str_shingle_to_bytes(shingle: tuple[str, ...]) -> bytes:
     """
     Converts a shingle to a byte string.
 
@@ -128,24 +128,34 @@ def convert_bytes_shingle_to_bytes(shingle: tuple[bytes, ...]) -> bytes:
     return bytes(shingle_bytes)
 
 
-def convert_to_bytes(shingle: tuple[Union[int, str, bytes], ...]) -> bytes:
+# A dictionary of converters for the possible token types
+converters = {
+    int: convert_int_shingle_to_bytes,
+    str: convert_str_shingle_to_bytes,
+    bytes: convert_bytes_shingle_to_bytes,
+}
+
+
+# A type variable that can be one of the possible token types
+Token = TypeVar("Token", int, str, bytes)
+
+
+def convert_shingles_to_bytes(
+    shingles: Iterable[tuple[Token, ...]]
+) -> Generator[bytes, None, None]:
     """
-    Converts a shingle to a single `bytes` object.
+    Converts all shingles in an iterable to byte strings.
 
-    :param shingle: The shingle, which can be a tuple of integers, strings, or
-    bytes.
+    :param shingles: The list of shingles, which should all be of the same type.
+    This type must be a tuple of either integers, strings, or byte strings. Only
+    the type of the first shingle is checked, and thus all of the other shingles
+    must have the same type to avoid errors.
 
-    :return: A `bytes` object containing the tokens from the shingle. For
-    shingles consisting `str` and `bytes` tokens, the null character (`\x00`) is
-    used as a separator. This means that tokens shouldn't contain the null
-    character. For `int` tokens, there is no separator, but the integers should
-    fit in 64 bits (as signed integers).
+    :return: A generator that yields the converted shingles.
     """
-    shingle_type = type(shingle[0])
-
-    if shingle_type is int:
-        return convert_int_shingles_to_bytes(shingle)
-    elif shingle_type is str:
-        return convert_str_shingles_to_bytes(shingle)
-    else:
-        return convert_bytes_shingle_to_bytes(shingle)
+    convert = None
+    for shingle in shingles:
+        if convert is None:
+            shingle_type = type(shingle[0])
+            convert = converters[shingle_type]
+        yield convert(shingle)

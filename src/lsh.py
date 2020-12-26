@@ -1,11 +1,13 @@
 #!/usr/bin/env python3.9
 
-from shingle import convert_to_bytes
+from minhash import create_minhash
+from shingle import convert_shingles_to_bytes, Token
 
 from datasketch import MinHash
 
 from collections.abc import Callable, Iterable
-from typing import Union, TypeVar
+from hashlib import sha1
+from typing import TypeVar, Union
 
 
 class LSH:
@@ -19,13 +21,14 @@ class LSH:
 
     nr_bands: int
     rows_per_band: int
-    matrix: list[list[bytes]]
+    bands: list[list[bytes]]
+    hash_function: Callable[[bytes], bytes]
 
     def __init__(
         self,
         nr_bands: int,
         rows_per_band: int,
-        hash_function: Callable[[bytes], bytes] = hash,
+        hash_function: Callable[[bytes], bytes] = sha1,
     ) -> None:
         """
         Initialises the data structure.
@@ -40,7 +43,7 @@ class LSH:
         """
         self.nr_bands = nr_bands
         self.rows_per_band = rows_per_band
-        self.matrix = [[] for _ in range(nr_bands * rows_per_band)]
+        self.bands = [[] for _ in range(nr_bands * rows_per_band)]
         self.hash_function = hash_function
 
     @property
@@ -50,30 +53,21 @@ class LSH:
         """
         return self.nr_bands * self.rows_per_band
 
-    def add_document(self, shingles: Iterable[tuple[Union[str, bytes, int]]]) -> None:
+    def add_document(self, minhash_values: Iterable[int]) -> None:
         """
         Adds a document to the matrix as a column. This function will compute
         the `self.nr_bands` hashes, one for each band, and add them to the end
         of the matrix rows.
 
-        :param shingles: The list/set/... of shingles, which can be given as
-        integers, strings, or bytes.
+        :param minhash_values: The hash values computed by the minhash
+        algorithm. These are also a single column of the signature matrix M.
+        Calls to this function of the same object should have hash values of the
+        same minhash object/algorithm as well.
         """
-        shingle_iterator = iter(shingles)
-        shingle = next(shingle_iterator)
-
-        try:
-            minhash = MinHash(self.nr_rows)
-            while True:
-                for shingle in shingles:
-                    shingle_bytes = convert_to_bytes(shingle)
-                    minhash.update(shingle_bytes)
-                minhash_values = minhash.hashvalues
-
-                shingle = next(shingle_iterator)
-
-        except StopIteration:
-            pass
+        for band in range(self.nr_bands):
+            values = minhash_values[self.nr_rows * band : self.nr_rows * (band + 1)]
+            hash_value = self.hash_function(values.tobytes())
+            self.bands[band].append(hash_value)
 
     def query(self):
         """"""
