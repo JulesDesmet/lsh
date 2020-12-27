@@ -15,14 +15,21 @@ def get_ngrams(text: Iterable[str], n: int) -> Generator[tuple[str, ...], None, 
 
     :return: A generator object generating all of the n-grams in the text.
     """
+    if n <= 0:
+        return None
 
-    # I think this has to just be (word) without , ?
     if n == 1:
+        # (word,) is a tuple with just one element, without the comma it'd be a string
         yield from ((word,) for word in text)
         return None
 
-    iterator = iter(text)
-    previous = [next(iterator) for _ in range(n - 1)]
+    try:
+        iterator = iter(text)
+        previous = [next(iterator) for _ in range(n - 1)]
+    except StopIteration:
+        # If the text is shorter than the number of words per shingle, yield nothing
+        return None
+
     for word in iterator:
         previous.append(word)
         yield tuple(previous)

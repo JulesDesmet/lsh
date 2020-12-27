@@ -30,7 +30,8 @@ def read_csv(filename: str) -> Generator[dict[str, str], None, None]:
 
 def read_data(data: Iterable[dict[str, str]]) -> Generator[list[str], None, None]:
     """
-    Extracts the required data from the data rows read from the CSV file.
+    Extracts the required data from the data rows read from the CSV file, and
+    applies some preprocessing to the text.
 
     :param data: An iterable of dictionary objects. These dictionaries should
     contain the keys `"News_ID"` and `"article"`. Other keys will be ignored.
@@ -44,7 +45,7 @@ def read_data(data: Iterable[dict[str, str]]) -> Generator[list[str], None, None
 
 
 if __name__ == "__main__":
-    filename = "data/news_articles_small.csv"
+    filename = "data/news_articles_large.csv"
 
     csv_reader = read_csv(filename)
     data_reader = read_data(csv_reader)
@@ -54,8 +55,8 @@ if __name__ == "__main__":
         convert_shingles_to_bytes(shingle_set) for shingle_set in shingle_set_generator
     )
 
-    nr_bands = 5
-    rows_per_band = 20
+    nr_bands = 20
+    rows_per_band = 5
 
     lsh = LSH(nr_bands, rows_per_band)
     for minhash in create_minhash(byte_string_generator, nr_bands * rows_per_band):
