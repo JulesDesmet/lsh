@@ -21,7 +21,7 @@ class LSH:
 
     nr_bands: int
     rows_per_band: int
-    bands: list[list[bytes]]
+    bands: list[dict[bytes, int]]
     hash_function: Callable[[bytes], bytes]
 
     def __init__(
@@ -43,7 +43,7 @@ class LSH:
         """
         self.nr_bands = nr_bands
         self.rows_per_band = rows_per_band
-        self.bands = [[] for _ in range(nr_bands * rows_per_band)]
+        self.bands = [{} for _ in range(nr_bands * rows_per_band)]
         self.hash_function = hash_function
 
     @property
@@ -53,7 +53,7 @@ class LSH:
         """
         return self.nr_bands * self.rows_per_band
 
-    def add_document(self, minhash_values: Iterable[int]) -> None:
+    def add_document(self, minhash_values: Iterable[int]) -> int:
         """
         Adds a document to the matrix as a column. This function will compute
         the `self.nr_bands` hashes, one for each band, and add them to the end
@@ -63,13 +63,39 @@ class LSH:
         algorithm. These are also a single column of the signature matrix M.
         Calls to this function of the same object should have hash values of the
         same minhash object/algorithm as well.
+
+        :return: The document's ID within the LSH data structure. This is simply
+        the column number (starting with 0) that contains the document's
+        signature.
         """
+        document_id = len(self.bands[0])
+
         for band in range(self.nr_bands):
             values = minhash_values[
                 self.rows_per_band * band : self.rows_per_band * (band + 1)
             ]
-            hash_value = self.hash_function(values.tobytes())
-            self.bands[band].append(hash_value.digest())
+            hash_value = self.hash_function(values.tobytes()).digest()
 
-    def query(self):
-        """"""
+            band_dict = self.bands[band]
+            if hash_value not in band_dict:
+                band_dict[hash_value] = {document_id}
+            else:
+                band_dict[hash_value].add(document_id)
+
+        return document_id
+
+    def query(self) -> set[tuple[int]]:
+        """
+        Returns the IDs of the similar documents.
+
+        :return: A set of tuples of document IDs. Each tuple of IDs is a group
+        of similar documents.
+        """
+        matches = set()
+
+        for band in self.bands:
+            for document_ids in band.values():
+                if len(document_ids) > 1:
+                    matches.add(tuple(sorted(document_ids)))
+
+        return matches

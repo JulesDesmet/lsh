@@ -61,6 +61,5 @@ if __name__ == "__main__":
     for minhash in create_minhash(byte_string_generator, nr_bands * rows_per_band):
         lsh.add_document(minhash.hashvalues)
 
-        for band in range(lsh.nr_bands):
-            print(lsh.bands[band][-1].hex(), end=" ")
-        print()
+    for group in lsh.query():
+        print(group)
