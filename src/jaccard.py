@@ -3,10 +3,10 @@
 from typing import TypeVar
 
 
-ShingleType = TypeVar("ShingleType")
+Shingle = TypeVar("Shingle")
 
 
-def jaccard(set_1: set[ShingleType], set_2: set[ShingleType]) -> float:
+def jaccard(set_1: set[Shingle], set_2: set[Shingle]) -> float:
     """
     Computes the Jaccard similarity between two sets.
 

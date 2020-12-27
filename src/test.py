@@ -1,5 +1,6 @@
 #!/usr/bin/env python3.9
 
+from jaccard import jaccard
 from shingle import (
     convert_bytes_shingle_to_bytes,
     convert_int_shingle_to_bytes,
@@ -14,7 +15,7 @@ from unittest import TestCase
 
 class ShingleTest(TestCase):
     """
-    Tests for the functionality defined in the `shingle` module.
+    Tests for the functionality implemented in the `shingle` module.
     """
 
     def test_get_ngrams(self) -> None:
@@ -115,6 +116,26 @@ class ShingleTest(TestCase):
         for shingles, expected in zip(shingle_lists, expected_lists):
             byte_strings = list(convert_shingles_to_bytes(shingles))
             self.assertEqual(byte_strings, expected)
+
+
+class JaccardTest(TestCase):
+    """
+    Tests for the functionality implemented in the `jaccard` module.
+    """
+
+    def test_jaccard(self) -> None:
+        """
+        Tests the `jaccard()` function.
+        """
+        data = [
+            ({1, 2, 3, 4}, {4, 5, 6}, 1 / 6),
+            ({1, 2, 3, 4}, {1, 2, 3, 4}, 4 / 4),
+            (set(), {1, 2, 3, 4}, 0.0),
+            (set(), set(), 0.0),
+        ]
+
+        for set_1, set_2, similarity in data:
+            self.assertEqual(jaccard(set_1, set_2), similarity)
 
 
 if __name__ == "__main__":
