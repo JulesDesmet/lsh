@@ -168,11 +168,28 @@ class LSHTest(TestCase):
             byte_string = b"".join(value.to_bytes(8, "big") for value in minhash_values)
             hash_1 = sha1(byte_string[:16]).digest()
             hash_2 = sha1(byte_string[16:]).digest()
-            
+
             self.assertIn(hash_1, lsh.bands[0])
             self.assertIn(hash_2, lsh.bands[1])
             self.assertIn(document_id, lsh.bands[0][hash_1])
             self.assertIn(document_id, lsh.bands[1][hash_2])
+
+    def test_lsh_query(self) -> None:
+        """
+        Tests the `LSH.query()` function.
+        """
+        data = [
+            [1, 2, 3, 4, 5, 6],
+            [23, 45, 67, 89, 12, 23],
+            [123, 345, 456, 567, 678, 789],
+            [1, 2, 3, 4, 5, 6],
+        ]
+
+        lsh = LSH(2, 3, sha1)
+        for minhash_values in data:
+            lsh.add_document(minhash_values)
+
+        self.assertEqual(lsh.query(), {(0, 3)})
 
 
 if __name__ == "__main__":
