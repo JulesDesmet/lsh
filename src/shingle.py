@@ -82,19 +82,15 @@ class ShingleSetGenerator(Iterable):
             yield shingles
 
 
-def convert_int_shingle_to_bytes(shingle: tuple[int, ...]) -> bytes:
+def convert_int_shingle_to_bytes(shingle: int) -> bytes:
     """
     Converts a shingle to a byte string.
 
-    :param shingle: The shingle as a tuple of integers.
+    :param shingle: The shingle as an integer.
 
-    :return: A byte string that represents the shingle. Each integer is added to
-    the byte string as a 64 bit big-endian integer.
+    :return: A byte string that represents the shingle.
     """
-    shingle_bytes = bytearray(8 * len(shingle))
-    for index, value in enumerate(shingle):
-        shingle_bytes[8 * index : 8 * index + 8] = value.to_bytes(8, "big")
-    return bytes(shingle_bytes)
+    return shingle.to_bytes(8, "big")
 
 
 def convert_str_shingle_to_bytes(shingle: tuple[str, ...]) -> bytes:
@@ -147,15 +143,15 @@ def convert_shingles_to_bytes(
     Converts all shingles in an iterable to byte strings.
 
     :param shingles: The list of shingles, which should all be of the same type.
-    This type must be a tuple of either integers, strings, or byte strings. Only
-    the type of the first shingle is checked, and thus all of the other shingles
-    must have the same type to avoid errors.
+    This type must be either an integer, or a tuple of strings or byte strings.
+    Only the type of the first shingle is checked, and thus all of the other
+    shingles must have the same type to avoid errors.
 
     :return: A generator that yields the converted shingles.
     """
     convert = None
     for shingle in shingles:
         if convert is None:
-            shingle_type = type(shingle[0])
+            shingle_type = int if type(shingle) is int else type(shingle[0])
             convert = converters[shingle_type]
         yield convert(shingle)

@@ -65,9 +65,11 @@ class LSH:
         same minhash object/algorithm as well.
         """
         for band in range(self.nr_bands):
-            values = minhash_values[self.nr_rows * band : self.nr_rows * (band + 1)]
+            values = minhash_values[
+                self.rows_per_band * band : self.rows_per_band * (band + 1)
+            ]
             hash_value = self.hash_function(values.tobytes())
-            self.bands[band].append(hash_value)
+            self.bands[band].append(hash_value.digest())
 
     def query(self):
         """"""

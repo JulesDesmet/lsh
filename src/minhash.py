@@ -25,20 +25,27 @@ def preprocess(text) -> list[str]:
     return tokens
 
 
-def create_minhash(data, perm):
+def create_minhash(data: Iterable[Iterable[bytes]], perm: int) -> list[MinHash]:
     """
-    :param data: The database, a collection of all the strings (articles/documents) we want to minhash
+    Creates a list of minhash structures, one for each list of byte strings.
+
+    :param data: The database, a collection of all the objects
+    (articles/documents) we want to minhash. Each object is represented by a
+    list of byte strings. Each byte string should represent a unique shingle in
+    the original text.
+
     :param perm: The amount of permutations we want to use to create the minhash
+
     :return: Returns a datasketch minhash structure
     """
     start = time.time()
     minhash = []
-    for text in data:
-        tokens = preprocess(text)
+    for tokens in data:
+#        tokens = preprocess(text)
         m = MinHash(num_perm=perm)
         # We add each shingle in the minhash structure
         for shingle in tokens:
-            m.update(shingle.encode('utf8'))
+            m.update(shingle)
         minhash.append(m)
     print('It took %s seconds to build minhash.' % (time.time() - start))
     return minhash
