@@ -74,7 +74,9 @@ class LSH:
             values = minhash_values[
                 self.rows_per_band * band : self.rows_per_band * (band + 1)
             ]
-            hash_value = self.hash_function(values.tobytes()).digest()
+
+            byte_string = b"".join(value.to_bytes(8, "big") for value in values)
+            hash_value = self.hash_function(byte_string).digest()
 
             band_dict = self.bands[band]
             if hash_value not in band_dict:

@@ -1,6 +1,7 @@
 #!/usr/bin/env python3.9
 
 from jaccard import jaccard
+from lsh import LSH
 from shingle import (
     convert_bytes_shingle_to_bytes,
     convert_int_shingle_to_bytes,
@@ -10,6 +11,7 @@ from shingle import (
     ShingleSetGenerator,
 )
 
+from hashlib import sha1
 from unittest import TestCase
 
 
@@ -136,6 +138,41 @@ class JaccardTest(TestCase):
 
         for set_1, set_2, similarity in data:
             self.assertEqual(jaccard(set_1, set_2), similarity)
+
+
+class LSHTest(TestCase):
+    """
+    Tests for the functionality implemented in the `lsh` module.
+    """
+
+    def test_lsh_nr_rows(self) -> None:
+        """
+        Tests the `LSH.nr_rows` property.
+        """
+        data = [(10, 4), (5, 20), (6, 75), (34, 54)]
+        for nr_bands, rows_per_band in data:
+            lsh = LSH(nr_bands, rows_per_band)
+            self.assertEqual(lsh.nr_rows, nr_bands * rows_per_band)
+
+    def test_lsh_add_document(self) -> None:
+        """
+        Tests the `LSH.add_document()` function.
+        """
+        data = [[1, 2, 3, 4], [123, 234, 345, 456], [11, 22, 33, 44]]
+
+        lsh = LSH(2, 2, sha1)
+        for iteration, minhash_values in enumerate(data):
+            document_id = lsh.add_document(minhash_values)
+            self.assertEqual(document_id, iteration)
+
+            byte_string = b"".join(value.to_bytes(8, "big") for value in minhash_values)
+            hash_1 = sha1(byte_string[:16]).digest()
+            hash_2 = sha1(byte_string[16:]).digest()
+            
+            self.assertIn(hash_1, lsh.bands[0])
+            self.assertIn(hash_2, lsh.bands[1])
+            self.assertIn(document_id, lsh.bands[0][hash_1])
+            self.assertIn(document_id, lsh.bands[1][hash_2])
 
 
 if __name__ == "__main__":

@@ -121,14 +121,7 @@ def convert_bytes_shingle_to_bytes(shingle: tuple[bytes, ...]) -> bytes:
     :return: A byte string that represents the shingle. Each byte string is
     added to the byte string, with the null character \x00 as separator.
     """
-    size = sum(len(token) for token in shingle) + len(shingle) - 1
-    shingle_bytes = bytearray(size)
-
-    location = 0
-    for token in shingle:
-        shingle_bytes[location : location + len(token)] = token
-        location += len(token) + 1
-    return bytes(shingle_bytes)
+    return b"\x00".join(shingle)
 
 
 # A dictionary of converters for the possible token types
