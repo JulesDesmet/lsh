@@ -45,7 +45,7 @@ def read_data(data: Iterable[dict[str, str]]) -> Generator[list[str], None, None
 
 
 if __name__ == "__main__":
-    filename = "data/news_articles_large.csv"
+    filename = "data/news_articles_small.csv"
 
     csv_reader = read_csv(filename)
     data_reader = read_data(csv_reader)

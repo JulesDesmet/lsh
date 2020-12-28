@@ -23,6 +23,7 @@ class LSH:
     rows_per_band: int
     bands: list[dict[bytes, int]]
     hash_function: Callable[[bytes], bytes]
+    _next_doc_id: int
 
     def __init__(
         self,
@@ -45,6 +46,7 @@ class LSH:
         self.rows_per_band = rows_per_band
         self.bands = [{} for _ in range(nr_bands * rows_per_band)]
         self.hash_function = hash_function
+        self._next_doc_id = 0
 
     @property
     def nr_rows(self) -> int:
@@ -68,14 +70,15 @@ class LSH:
         the column number (starting with 0) that contains the document's
         signature.
         """
-        document_id = len(self.bands[0])
+        document_id = self._next_doc_id
+        self._next_doc_id += 1
 
         for band in range(self.nr_bands):
             values = minhash_values[
                 self.rows_per_band * band : self.rows_per_band * (band + 1)
             ]
 
-            byte_string = b"".join(value.to_bytes(8, "big") for value in values)
+            byte_string = b"".join(int(value).to_bytes(8, "big") for value in values)
             hash_value = self.hash_function(byte_string).digest()
 
             band_dict = self.bands[band]
