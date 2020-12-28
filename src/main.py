@@ -62,5 +62,5 @@ if __name__ == "__main__":
     for minhash in create_minhash(byte_string_generator, nr_bands * rows_per_band):
         lsh.add_document(minhash.hashvalues)
 
-    for group in lsh.query():
-        print(group)
+    for group, similarity in lsh.query().items():
+        print(group, similarity)

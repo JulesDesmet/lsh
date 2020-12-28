@@ -7,6 +7,7 @@ from datasketch import MinHash
 
 from collections.abc import Callable, Iterable
 from hashlib import sha1
+from itertools import combinations
 from typing import TypeVar, Union
 
 
@@ -89,18 +90,21 @@ class LSH:
 
         return document_id
 
-    def query(self) -> set[tuple[int]]:
+    def query(self) -> dict[tuple[int, int], float]:
         """
         Returns the IDs of the similar documents.
 
-        :return: A set of tuples of document IDs. Each tuple of IDs is a group
-        of similar documents.
+        :return: A mapping of tuples of similar documents, and their
+        approximated Jaccard similarity.
         """
-        matches = set()
+        matches = {}
 
         for band in self.bands:
             for document_ids in band.values():
-                if len(document_ids) > 1:
-                    matches.add(tuple(sorted(document_ids)))
+                for group in combinations(document_ids, 2):
+                    if group in matches:
+                        matches[group] += 1
+                    else:
+                        matches[group] = 1
 
-        return matches
+        return {group: count / self.nr_bands for group, count in matches.items()}
