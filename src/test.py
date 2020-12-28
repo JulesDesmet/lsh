@@ -189,7 +189,7 @@ class LSHTest(TestCase):
         for minhash_values in data:
             lsh.add_document(minhash_values)
 
-        self.assertEqual(lsh.query(), {(0, 3)})
+        self.assertEqual(lsh.query(), {(0, 3): 1.0})
 
 
 if __name__ == "__main__":
