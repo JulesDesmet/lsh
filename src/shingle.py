@@ -137,7 +137,7 @@ Token = TypeVar("Token", int, tuple[str, ...], tuple[bytes, ...])
 
 
 def convert_shingles_to_bytes(
-    shingles: Iterable[Token],
+    shingles: Iterable[Union[int, tuple[str, ...], tuple[bytes, ...]]],
 ) -> Generator[bytes, None, None]:
     """
     Converts all shingles in an iterable to byte strings.
