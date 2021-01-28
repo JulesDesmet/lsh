@@ -113,6 +113,8 @@ if __name__ == "__main__":
     data_reader = read_data(csv_reader)
     shingle_set_generator = ShingleSetGenerator(data_reader, 2)
 
+    # Unident if you want to generate histogram.
+
     # buckets = generate_histogram(list(shingle_set_generator), 10)
     # for index, count in enumerate(buckets):
     #     print(f"[{index / 10}, {(1 + index) / 10}{']' if index == 9 else '['} :", count)
