@@ -77,6 +77,34 @@ def generate_histogram(data: list[set[int]], nr_bars: int = 10) -> list[int]:
     return buckets
 
 
+def generate_statistics(query: dict[tuple[int,int], float], range1: int, range2: int, sim: float):
+
+    true_positive = 0
+    true_negative = 0
+    false_positive = 0
+    false_negative = 0
+    for group, similarity in query.items():
+        if any(x > range1 for x in group):
+            if any(x > range2 for x in group):
+
+                if similarity >= sim:
+                    false_positive += 1
+                else:
+                    true_negative += 1
+            else:
+                if similarity >= sim:
+                    true_positive += 1
+                else:
+                    false_negative += 1
+    specificity = 0
+    if (true_negative+false_positive) == 0:
+        specificity = "None"
+    else:
+        specificity = true_negative/(true_negative+false_positive)
+    precision = true_positive/(true_positive+false_positive)
+    sensitivity = true_positive/(true_positive+false_negative)
+    print("Specificity {}, Precision {}, Sensitivity {}".format(specificity, precision, sensitivity))
+
 if __name__ == "__main__":
     start = time.time()
     filename = "data/news_articles_small.csv"
@@ -93,36 +121,11 @@ if __name__ == "__main__":
        convert_shingles_to_bytes(shingle_set) for shingle_set in shingle_set_generator
     )
 
-    nr_bands = 5
-    rows_per_band = 20
+    nr_bands = 20
+    rows_per_band = 5
 
     lsh = LSH(nr_bands, rows_per_band)
     for minhash in create_minhash(byte_string_generator, nr_bands*rows_per_band):
        lsh.add_document(minhash.hashvalues)
     print('It took %s seconds to build LSH.' % (time.time() - start))
-    true_positive = 0
-    true_negative = 0
-    false_positive = 0
-    false_negative = 0
-    specifity = 0
-    for group, similarity in lsh.query().items():
-        if any(x > 1000 for x in group):
-            if any(x > 1050 for x in group):
-
-                if similarity >= 0.8:
-                    false_positive+=1
-                else:
-                    true_negative+=1
-            else:
-                if similarity >= 0.8:
-                    true_positive+=1
-                else:
-                    false_negative+=1
-    specificity = 0
-    if (true_negative+false_positive)==0:
-        specificity="None"
-    else:
-        specificity = true_negative/(true_negative+false_positive)
-    precision = true_positive/(true_positive+false_positive)
-    sensitivity = true_positive/(true_positive+false_negative)
-    print("Specificity {}, Precision {}, Sensitivity {}".format(specificity,precision,sensitivity))
+    generate_statistics(lsh.query(), 1000, 1050, 0.8)
