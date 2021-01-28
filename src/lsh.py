@@ -24,7 +24,6 @@ class LSH:
     rows_per_band: int
     bands: list[dict[bytes, int]]
     hash_function: Callable[[bytes], bytes]
-    _next_doc_id: int
 
     def __init__(
         self,
