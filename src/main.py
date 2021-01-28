@@ -45,6 +45,38 @@ def read_data(data: Iterable[dict[str, str]]) -> Generator[list[str], None, None
         yield [word.lower() for word in words]
 
 
+def generate_histogram(data: list[set[int]], nr_bars: int = 10) -> list[int]:
+    """
+    Generates histogram data for the Jaccard similarities between the data sets.
+    Each bar of the histogram is equal in width.
+
+    :param data: The shingle sets representing the documents. Each shingle
+    should be represented by an integer, i.e. as returned by the
+    `ShingleSetGenerator`.
+
+    :param nr_bars: The number of bars the histogram will consist of. This also
+    determines the width of each bar, and their represented range. For example,
+    `nr_bars=10` means that each bar will be `0.1` wide, with the first bar
+    representing the range `[0.0, 0.1[`. The range of each bar is a half-open
+    interval (e.g. `[0.0, 0.1[`), except for the last one which is a closed
+    interval (e.g. `[0.9, 1.0]`).
+
+    :return: The counts for each bar of the histogram. The values in this list
+    are ordered by increasing interval starts (e.g. first `[0.0, 0.1[`, then
+    `[0.1, 0.2[`, ..., and finally `[0.9, 1.0]`).
+    """
+    buckets = [0 for _ in range(nr_bars)]
+    for index_1, document_1 in enumerate(data):
+        for document_2 in data[:index_1]:
+            similarity = jaccard(document_1, document_2)
+
+            # Computing bucket number by computing `floor(nr_bars * similarity)`
+            # Using `min()` to put similarities of 1.0 in the last bucket
+            bucket = min(int(nr_bars * similarity), nr_bars - 1)
+            buckets[bucket] += 1
+    return buckets
+
+
 if __name__ == "__main__":
     start = time.time()
     filename = "data/news_articles_small.csv"
