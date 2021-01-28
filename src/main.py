@@ -11,6 +11,7 @@ from re import split
 
 import time
 
+
 def read_csv(filename: str) -> Generator[dict[str, str], None, None]:
     """
     Reads a file as a CSV file, assuming that the first row is the header.
@@ -77,7 +78,9 @@ def generate_histogram(data: list[set[int]], nr_bars: int = 10) -> list[int]:
     return buckets
 
 
-def generate_statistics(query: dict[tuple[int,int], float], range1: int, range2: int, sim: float):
+def generate_statistics(
+    query: dict[tuple[int, int], float], range1: int, range2: int, sim: float
+):
 
     true_positive = 0
     true_negative = 0
@@ -97,37 +100,55 @@ def generate_statistics(query: dict[tuple[int,int], float], range1: int, range2:
                 else:
                     false_negative += 1
     specificity = 0
-    if (true_negative+false_positive) == 0:
+    if (true_negative + false_positive) == 0:
         specificity = "None"
     else:
-        specificity = true_negative/(true_negative+false_positive)
-    precision = true_positive/(true_positive+false_positive)
-    sensitivity = true_positive/(true_positive+false_negative)
-    print("Specificity {}, Precision {}, Sensitivity {}".format(specificity, precision, sensitivity))
+        specificity = true_negative / (true_negative + false_positive)
+    precision = true_positive / (true_positive + false_positive)
+    sensitivity = true_positive / (true_positive + false_negative)
+    print(
+        "Specificity {}, Precision {}, Sensitivity {}".format(
+            specificity, precision, sensitivity
+        )
+    )
+
 
 if __name__ == "__main__":
     start = time.time()
-    filename = "data/news_articles_small.csv"
+    filename = "data/news_articles_large.csv"
 
     csv_reader = read_csv(filename)
     data_reader = read_data(csv_reader)
     shingle_set_generator = ShingleSetGenerator(data_reader, 2)
 
-    # Unident if you want to generate histogram.
+    # Uncomment if you want to generate histogram.
 
     # buckets = generate_histogram(list(shingle_set_generator), 10)
     # for index, count in enumerate(buckets):
     #     print(f"[{index / 10}, {(1 + index) / 10}{']' if index == 9 else '['} :", count)
 
     byte_string_generator = (
-       convert_shingles_to_bytes(shingle_set) for shingle_set in shingle_set_generator
+        convert_shingles_to_bytes(shingle_set) for shingle_set in shingle_set_generator
     )
 
-    nr_bands = 20
+    nr_bands = 25
     rows_per_band = 5
 
     lsh = LSH(nr_bands, rows_per_band)
-    for minhash in create_minhash(byte_string_generator, nr_bands*rows_per_band):
-       lsh.add_document(minhash.hashvalues)
-    print('It took %s seconds to build LSH.' % (time.time() - start))
-    generate_statistics(lsh.query(), 1000, 1050, 0.8)
+    for minhash in create_minhash(byte_string_generator, nr_bands * rows_per_band):
+        lsh.add_document(minhash.hashvalues)
+    print("It took %s seconds to build LSH." % (time.time() - start))
+
+    # generate_statistics(lsh.query(), 1000, 1050, 0.8)
+
+    min_similarity = 0.8
+    results = sorted(
+        (sorted(doc_ids), similarity)
+        for doc_ids, similarity in lsh.query().items()
+        if similarity >= min_similarity
+    )
+
+    with open("result.csv", "w") as result_file:
+        for doc_ids, similarity in results:
+            result_file.write(f"{doc_ids[0]}, {doc_ids[1]}\n")
+            print(f"{doc_ids[0]:4} - {doc_ids[1]:4} : {similarity}")
